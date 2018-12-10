@@ -683,12 +683,21 @@ And as for binned plot, it's also slightly better than model2. We have reason to
 
 #Reference 
 [1] https://www.investopedia.com/articles/trading/09/what-factors-create-trends.asp#ixzz5YeMXgWVM 
+
 [2] Lee, B. R., Lee, K., & Ratti, R. A. (2001). Monetary policy, oil price shocks, and the Japanese economy. Japan and the World Economy, 13, 321–349.
+
 [3] Pesaran, M. H., & Shin, Y. (1998). Generalized impulse response analysis in linear multivariate models. Economics Letters, 58, 17–29.
+
 [4] Eliezer B. Ayal (1965), The impact of export taxes on the domestic economy of underdeveloped countries, The Journal of Development Studies, 1:4, 330-362, DOI: 10.1080/00220386508421162
+
 [5] Export Prices Fall 0.5% Vs Expectations for 0.1% Gain; Import Prices Unchanged Vs Consensus For 0.2% Gain. (2013). Live Briefs US, p12.
+
 [6] Akram, Q. F. (2004). Oil prices and exchange rate. The Econometrics Journal, 7, 476–504.
+
 [7] Douglas Bates Martin Mächler Benjamin M. Bolker Steven C. Walker(2014) , Fitting linear mixed-effects models using lme4 , https://arxiv.org/pdf/1406.5823.pdf
+
 [8] Diagnostic Checks for Multilevel Models,Tom A. B. Snijders and Johannes Berkhof.(2013) https://www.stats.ox.ac.uk/~snijders/handbook_ml_ch3.pdf 
+
 [9] Chung-Rou Fang, Shih-Yi You(2014), The impact of oil price shocks on the large emerging countries' stock prices: Evidence from China, India and Russia, International Review of Economics & Finance, Volume 29, Pages 330-338, ISSN 1059-0560, https://doi.org/10.1016/j.iref.2013.06.005.
+
 [10] Juan C. Reboredo, Miguel A. Rivera-Castro(2014), Wavelet-based evidence of the impact of oil prices on stock returns, International Review of Economics & Finance, Volume 29, Pages 145-176, ISSN 1059-0560, https://doi.org/10.1016/j.iref.2013.05.014.
