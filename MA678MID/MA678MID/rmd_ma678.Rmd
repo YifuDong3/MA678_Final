@@ -3,14 +3,16 @@ title: "MA678 Final Project"
 author: Yifu Dong
 date:   12/09/2018
 output: pdf_document
+fontsize: 12pt
+geometry: margin= 0.8in
+abstract: "This exploration analysis is based on the macroeconomic data from the world bank and tradingeconomics, aiming to explore the relationship between exports of different countries and many macroeconomic indicators. We use EDA to find appropriate indicators for partial pooling, and use linear model and mixed effect model to explore the quantitative relationship. By adding a lag effect indicator, we further improved the model. From this project, we know that the exports of different countries are all influenced by interest rate, exchange rate, CPI and so on. Also, different countries are being influenced differently by bussiness economic survey and inflation forecast."
+Keywords: Export; Data visualization; Mixed model; Lag
 ---
 
 
 
-## draft
-
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.width = 8, fig.height = 8, fig.align  = "centre"  )
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.width =6, fig.height = 6, fig.align  = "centre"  )
 library(arm)
 library(readxl)
 library(readr)
@@ -39,13 +41,13 @@ yeardata_new <- read_excel("yearly.xlsx")
 
 
 
-#Introduction
+#I. Introduction
 
-##Background
+##1.1 Background
 
 The world economy and global finance has strengthened over time. Not only the US, whose import and export over the past year had a better growth than in 2017, but also the whole world has benefit from Comparative Advantage. However, the improvements in 2018 in growth remain unevenly distributed across countries and regions. Economic prospects for many commodity exporters remain particularly challenging. Also, we has experienced a trend of Protectionism in global economy over the past years. To explore the grwoth of world economics, reasearching on protectionism is an important part. This requires us to learn about the import and export of each country. Trade between countries is the window to know protectionism and the world economy since it is equivalent to one of engines of economic growth. This is the view of Keynesian economics as well as modern liberal economists. The figure below shows how important trading between countries is. From 1960 to 2017, the percentage of trading between countries is increasing all the time.
 
-```{r fig.width=7, fig.height=25,echo=FALSE}
+```{r fig.width=7, fig.height=25,echo=FALSE,fig.height=7,fig.width=10}
 library(png)
 library(grid)
 img <- readPNG("11.png") ###relative path
@@ -53,39 +55,39 @@ img <- readPNG("11.png") ###relative path
 ```
 Resource: The World Bank 
 
-From the image, we know that different countries are influenced by export and import differently. Also, differnt countries have different fiscal and currency policies. Thus, it's interesting to know how different these countries are influenced by different indicators.
+From the image, we know that different countries are influenced by export differently. Also, differnt countries have different fiscal and currency policies. Thus, it's interesting to know how different these countries are influenced by different indicators.
 
 
-##Previous work
+##1.2 Previous work
 
-Import and export has been explored deep in the field of macroeconomics and global finance. A lot of studies have examined the determinants of exports and imports. Riedel(1984) found that export and import behavior is heavily influenced by market conditions, which is used to measure domestic profitability and domestic demand. Matket conditions can be determinned by many factors. Cory Mitchell(2018) summarized that there are factors shaping trends over the long term and providing insight into how future trends may occur:government, liquidity, supply, demand, speculation and expectation and so on. (https://www.investopedia.com/articles/trading/09/what-factors-create-trends.asp#ixzz5YeMXgWVM ) 
-This actually is a rough summary. For example, We can further divide "government" into unemployment ratio, government policy, government credit, government corruption condition. Gaston(2010) found strong evidence that higher terms of trade lower the equilibrium rate of unemployment. Government policy definitly influence a lot on international transaction.It is related with taxation, import and export restraints, and exchange rate. Elizer Ayal(1965) (Eliezer B. Ayal (1965) The impact of export taxes on the domestic economy of underdeveloped countries, The Journal of Development Studies, 1:4, 330-362, DOI: 10.1080/00220386508421162) quantitatively researched on the impact of export taxaztion on economy of developing countries, like Thailand and Burma. Holly(1992) found that supply side factors are comparatively much more important than demand side factors for explaining export and import performance in the sector of German manufacturing. Jongwanish(2007) also did similar research in East and Southeast countries. Also, some indicators influencing a coutry's import and export are explored independently. Zhong, Xiaojun(2009) uses Co-integration analysis and Granger Causality test  to empirically analyze the FDI (Foreign Direct Investment) influence over Chinese import and export trade after reform and opening-up. But the influence of FDI on other countries still needs to be figured out. Also, in recent years, people pay more attention to the influence of expectation on import and export. Live Briefs US(2013) **(Export Prices Fall 0.5% Vs Expectations for 0.1% Gain; Import Prices Unchanged Vs Consensus For 0.2% Gain. (2013). Live Briefs US, p. 12.)** quantitatively concluded that 0.1% gain in expectation will contribute to 0.5% fall of export price. 
+Import and export has been explored deep in the field of macroeconomics and global finance. A lot of studies have examined the determinants of exports and imports. Riedel(1984) found that export and import behavior is heavily influenced by market conditions, which is used to measure domestic profitability and domestic demand. Matket conditions can be determinned by many factors. Cory Mitchell(2018) summarized that there are factors shaping trends over the long term and providing insight into how future trends may occur:government, liquidity, supply, demand, speculation and expectation and so on. 
 
-Most of papers pay attention to import and export of one single country. Thus, it will be meaningful to compare indicators of export and import for different countries. 
+This actually is a rough summary. For example, We can further divide "government" into unemployment ratio, government policy, government credit, government corruption condition. Gaston(2010) found strong evidence that higher terms of trade lower the equilibrium rate of unemployment. Government policy definitly influence a lot on international transaction.It is related with taxation, import and export restraints, and exchange rate. Elizer Ayal(1965) quantitatively researched on the impact of export taxaztion on economy of developing countries, like Thailand and Burma. Holly(1992) found that supply side factors are comparatively much more important than demand side factors for explaining export and import performance in the sector of German manufacturing. Jongwanish(2007) also did similar research in East and Southeast countries. Also, some indicators influencing a coutry's import and export are explored independently. Zhong, Xiaojun(2009) uses Co-integration analysis and Granger Causality test  to empirically analyze the FDI (Foreign Direct Investment) influence over Chinese import and export trade after reform and opening-up. But the influence of FDI on other countries still needs to be figured out. Also, in recent years, people pay more attention to the influence of expectation on import and export. Live Briefs US(2013) quantitatively concluded that 0.1% gain in expectation will contribute to 0.5% fall of export price. 
+
+As for methodology, Douglas Bates(2014) fits a linear mixed-effects models and incorporate lag effects to the model. He provides a good solution for us to continue our model checking. Tom A. B. Snijders(2013) told us some ways to do diagnostic checks for multilevel models. Chung-Rou Fang(2014) uses oil price to explore the relationship between oil price shocks and large emerging countries' stock prices. This study is similar with ours. But oil price and stock prices are easier to get, while macroeconomic data are oftern seasonal or annual. There is also many website for reference.
+
+Most of papers pay attention to import and export of one single country. Thus, it will be meaningful to compare indicators of export and import for different countries.  And since import are absolute negative with export, so we will only explore "Export".
 
 
-#Method 
-##Data source
+#II. Method 
+##2.1 Data source
 
 The data resource will be not only from the IMF website and Federal Reserve System, but also from third-party sites, like Tradingeconomics, theglobaleconomy.com, where we can download data more easily. Moreover, we need to visit websites of central banks in all other countries we want to explore.
 
-On the other hand, we choose several countries as our representative countries.
+On the other hand, we choose several countries as our representative countries. 
 
-##Model used
-
-
+Moreover, since import are absolute negative with export, so we will only look at "Export".
 
 
-
-#EDA
+#III. EDA
 
 First, we will do the EDA to see the relationships between our selected indicators and import and export. Consider that import and export and totally opposite, their corelation is -1. So we use export alone as our response. 
 
-##Data Cleaning
+##3.1Data Cleaning
 
 Before EDA, we need to sort out our data and clean the data.  Also, we need to make sure all countries' export data are calculated to US dollar or another unified currency. 
 
-```{r}
+```{r,message=FALSE,warning=FALSE}
 
 #merge monthdata and yeardata
 ##transfer yeardata 
@@ -113,12 +115,12 @@ datafinal[datafinal$Country=="United Kingdom",]$Exports=(datafinal[datafinal$Cou
 
 ```
 
-##Data Visualization
+##3.2Data Visualization
 
 For this part, the main job is to find whether our indicators have obvious relationship with export. It is not recomended to use various kinds of plots, like pie chart and box plot, to show the trend because our variable characteristics are similar.
 
-###Country selection
-```{r,message=FALSE,warning=FALSE,echo=FALSE}
+###3.2.1Country selection
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.height=7,fig.width=10}
 
 theCountries <- c("DEU", "CAN", "CHN","FRA","BRA","GBR","IND","JPN","USA","AUS","ISR","SGP")
 # These are the ISO3 names of the countries you'd like to plot in red
@@ -140,8 +142,7 @@ We choose 12 countries as our selected countries. Our primary factor of choosing
 
 Second, we try to make our selected coutries diverse. Thus, we not only choose USA, which is a large country, but also choose Singapore. 
 
-
-###Export Comparation
+###3.2.2Export Comparation
 ```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=10,fig.height=10}
 library(ggsignif)
 
@@ -159,7 +160,7 @@ From the barplot above, we can visually see the export of each country. We found
 Moreover, we find from the barplot that from 2008 to 2009 the export of these countries drop down suddenly from about 8000000 to 65000000, we've found that it is dut to the financial crisis in 2008. It influenced USA and Japan most in terms of the amount of export. But in 2010, the export returned to the level of 2008, indicating that financial crisis didn't influence much to export of selected countries.
 
 
-###Finding predictors
+###3.2.3 Finding predictors
 Now we are going to use visualization to find which variables are related to export, so as to prepare for the modelling.
 
 ####GDP and Economic Growth
@@ -167,7 +168,7 @@ Now we try to find whether Economics Growth is related with exports. According t
 where C represents consumption, I represents investment, G represent government budget, NX represents export minus import. Thus, we cannot use GDP growth to represent economic growth.
 
 We use Business confidence survey to represent economic growth. Business confidence survey offers valuable insight into trends of global business growth by surveying people across a broad spectrum of industries.
-```{r,fig.height=10,fig.width=10,message=FALSE,warning=FALSE,echo=FALSE}
+```{r,fig.height=8,fig.width=10,message=FALSE,warning=FALSE,echo=FALSE}
 require(gridExtra)
 plot1 <- ggplot(datafinal, aes(x = datafinal$`Business confidence survey`, y = Exports, color = datafinal$Country)) +
       geom_point(stat = "identity") +   theme_minimal() + ylim(0,500000)+
@@ -260,7 +261,7 @@ Now it's the section of unemployment. We are here drawing a plot of unemployment
 We found that there is no clear unified trend. In most countries, like United Kindom, Australia, Canada, Germany, there are negative relation. However, the trend in Singapore, USA are not clear. Thus, we need to further explore this indicator.
 
 ####Internation trade and investment 
-```{r,fig.height=15,fig.width=15,message=FALSE,warning=FALSE,echo=FALSE}
+```{r,fig.height=8,fig.width=15,message=FALSE,warning=FALSE,echo=FALSE}
 #Foreign exchange reserves
 plot1 <- ggplot(datafinal, aes(x = datafinal$`Foreign exchange reserves`, y = Exports, color = datafinal$Country)) +
       geom_point(stat = "identity", position = position_dodge()) +   theme_minimal() + 
@@ -297,8 +298,8 @@ For the first row, the two plots are showing the relationship between Foreign ex
 
 For the second row, the two plots are showing the relationship between FDI and export. It seems that there is no relation here. All the lines seems like in a messy. 
 
-###Forecast and expectation
-```{r,fig.height=15,fig.width=15,message=FALSE,warning=FALSE, echo=FALSE}
+####Forecast and expectation
+```{r,fig.height=8,fig.width=15,message=FALSE,warning=FALSE, echo=FALSE}
 require(gridExtra)
 #Economics growth forecast
 plot1 <- ggplot(datafinal, aes(x = datafinal$`Economic growth forecast`, y = Exports, color = datafinal$Country)) +
@@ -326,9 +327,9 @@ For the first row, the two plots are showing the relationship between Economic g
 For the second row, the one plot is showing the relationship between Inflation forecast and export. It can be found that there is a mild but not clear negative trend here. It means for each country, the effect of decreasing might be different. For example, the effectness of Inflaction Forecast is more obvious in Japan than in Isareal or Canada.
 
 
-###Governance, institution and corruption
+####Governance, institution and corruption
 
-```{r,,fig.height=8,fig.width=15,message=FALSE,warning=FALSE,echo=FALSE}
+```{r,,fig.height=7,fig.width=15,message=FALSE,warning=FALSE,echo=FALSE}
 require(gridExtra)
 #government effectiveness
 
@@ -354,7 +355,7 @@ We have two plots here. It's obvious that the effectness of these two indicators
 On the other hand, most of  the curves in the left-hand plot have similar quadratic trend. Thus, we need to try one of these two indicators in our model and see whether it can improve the model.
 
 
-##Correlation checking
+###3.2.4 Correlation checking
 Now we already have several potential predictors: Business Confidence Survey, Inflation Rate, Interest Rate, Exchange Rate, CPI, Unemployment, Foreign exchange reserve, Inflation forecast, Tax, and Political Stability. 
 
 First, we will use these variables to draw a correlation plot. It's important because in financial market, there are a lot of indicators which are interrelated.
@@ -420,7 +421,7 @@ After careful caomparison, we remove "Foreign Exchange Reserve", and try to add 
 From the heat plot, we know that although the VIF value are small enough, there is still high correlation existing between indicators selected. To deal with it, we choose to keep them in our model, since VIF has indicated that the problem of collinearity will not influce our model. 
 
 
-##Lead-Lag effect checking(Time Series EDA)
+###3.2.5 Lead-Lag effect checking(Time Series EDA)
 In statistics and economics, lead-lag effect is not rare. It describes the situation where one (leading) variable is cross-correlated with the values of another (lagging) variable at later times. In our project, we don't know whether our response(Export) will be influenced by lagging effect. So we need to use EDA to have a check. 
 
 Using VIF and correlation checking ,we already know 9 variables which are good for prediction. So here we use these 9 variables to check the lead-lag effect.
@@ -431,7 +432,7 @@ Then we drew the ACF plots. If the time series is not trend-stationary, we would
 
 Here we constructed a function to get ACF plots.
 
-```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=7,fig.height=7}
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=4,fig.height=4}
 
 #indicator: r_deposit, CPI,unemployment,Inflation , Exchange, BusinessConfidenceSurvey, Inflationforecast, Political_stability, ecogrowth
 
@@ -468,7 +469,7 @@ myacf2diff(datafinal$Exports)
 
 Then we constructed a function to get PACF plots.
 
-```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=7,fig.height=7}
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=4,fig.height=4}
 mypacf2diff <- function(a){
    r_deposit_export <- data.frame("Country"=datafinal$Country,"r_deposit"=a,"export"=datafinal$Exports,"Year"=datafinal$Year,"Month"=datafinal$Month)
   r_deposit_export <- na.omit(r_deposit_export)
@@ -507,9 +508,9 @@ For ACF plots, we found that the plot have smooth, geometric decay trend, and it
 
 
 
-#Modelling 
+#VI. Modelling 
 
-##Linear Regression Model
+##4.1 Linear Regression Model
 Now, we begin to build a model.  First we use lm() to build a linear model.
 
 ```{r,message=FALSE,warning=FALSE,echo=FALSE}
@@ -525,43 +526,47 @@ plot(m1)
 First we construct a basic linear model. The R Squared of this model is 0.68. From the residual plot and normal Q-Q plot, we know that the residual is not random distributed. We need some adjustments. But it's still glad to see that some predictors are significant.
 
 
-##Multilevel Regression Model
+##4.2 Multilevel Regression Model
 Now we build a Multilevel Regression Model. From our EDA, we know that we can use some predictors for partial pooling.
 
-```{r,message=FALSE,warning=FALSE,echo=FALSE}
-m2 <- lmer(data=datafinal,scale(Exports)~scale(r_deposit)+scale(CPI)+scale(unemployment)+scale(Inflation)+scale(Exchange)+scale(BusinessConfidenceSurvey)+scale(Inflationforecast)+scale(GDP)+factor(Country)+(1+Exchange|Country))
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE, fig.height=4, fig.width=4}
+colnames(datafinal) <- c("Country","Code","Year","Month","GDP","CPI","r_deposit","r_business","employment","unemployment","ecogrowth","Exports","FDI","ExchangeDeposit","Gov_expenditure","Prod","Inflation","Exchange","RetailSale","BusinessConfidenceSurvey","Reserves","Tax_internation","Tax_corporate","Imports","Tax_indirect","Remittances","Ecoforecast","Inflationforecast","Unemplymentforecast","Law","Gov_effectiveness","Political_stability")
+
+m2 <- lmer(data=datafinal,scale(Exports)~scale(datafinal$r_deposit)+scale(CPI)+scale(unemployment)+scale(Inflation)+scale(Exchange)+scale(BusinessConfidenceSurvey)+scale(Inflationforecast)+scale(GDP)+factor(Country)+(1+Exchange|Country))
 summary(m2)
 datafinal <- datafinal%>%mutate("time"=100*datafinal$Year+datafinal$Month)
 
-
 #model checking
-#https://www.stats.ox.ac.uk/~snijders/handbook_ml_ch3.pdf 
-#Diagnostic Checks for Multilevel Models,Tom A. B. Snijders and Johannes Berkhof
-
 #Fitting linear mixed-effects models using lme4 ,Douglas Bates Martin Mächler Benjamin M. Bolker Steven C. Walker, 2014, https://arxiv.org/pdf/1406.5823.pdf
-
 
 #model checking 
 anova(m2)
 plot(m2,type=c("p","smooth") )##fitted vs  residual
 plot(m2,sqrt(abs(resid(.)))~fitted(.),type=c("p","smooth")) ## scale-location
 binnedplot(fitted(m2),resid(m2))
+lattice::dotplot(ranef(m2, condVar=TRUE))
 ```
+
 
 We use several predictors which we used in the section of EDA for partial pooling. After many trials, it turns out that BusinessConfidenceSurvey, ecogrowth and FDI will help the model fit better.
 From the display and ANOVA analysis of this model. We can see that almost all predictors are significant. The random effects and fixed effects are not influenced much by correlation. 
 The analysis of variance table  is a collection of statistical models and their associated estimation procedures used to analyze the differences among group means in a sample.The F-statistic is a ratio of two quantities that are expected to be roughly equal under the null hypothesis, which produces an F-statistic of approximately 1. In our model, F-test is to used for testing whether the coefficient of thevariable equals 0. The result of our ANOVA shows that most of our predictors are significant. 
 Then from the residual plot and binned residual plot, we find that actually the model fits not bad. All the residual points are random distributed and no outliers exists in our residual plot. As for the binned plot, most bins are in the interval, and no linear separation exists.
 
+Since Inflation forecast, Business Confidence Survey, Exchange rate are related with each other, we only use one when fitting a mixed model. 
+
 Notice that our AIC and DIC here are negative. 
 The AIC is defined as: $$AIC=2k-2ln(L)$$where k denotes the number of parameters and L denotes the maximized value of the likelihood function. For model comparison, the model with the lowest AIC score is preferred. So does DIC.
+
+**Here we use several indicator for partial pooling, and many of them are useful, but they are mostly related with each other, the correlation is pretty high. So we will only use one of them for partial pooling.**
 
 Limitation:
 There is still something need to be improved. Here we find that F-value of Inflation is not significant,  for deposit interest rate, its fixed effect is also not significant. However, if we remove it, the goodness of fit will be worse. 
 
 
 
-##lmer()&time
+##4.3 Time&lmer()
 The multilevel model fits not bad. But it's kind of weird: Generally, lag effect is common in economics. 
 For example, inflation in December would not influence the export in December, because when the export happens in this month, maybe the order and contract has already been determined several months ago. So if money inlfation happens in this month, it will influence those orders and contract which have not been determined yet, and it will cause the traders to re-think whether the order is still profitable, and whether something, like the quantity of goods, needs to be adjusted to hedge the influence of inflation before making a deal.
 
@@ -619,8 +624,8 @@ Thus, we choose CPI here as our lagged indicator.
 
 We can try to utilize this to adjust our model:
 
-```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.height=5,fig.width=5}
-
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.height=4,fig.width=4}
+colnames(datafinal) <- c("Country","Code","Year","Month","GDP","CPI","r_deposit","r_business","employment","unemployment","ecogrowth","Exports","FDI","ExchangeDeposit","Gov_expenditure","Prod","Inflation","Exchange","RetailSale","BusinessConfidenceSurvey","Reserves","Tax_internation","Tax_corporate","Imports","Tax_indirect","Remittances","Ecoforecast","Inflationforecast","Unemplymentforecast","Law","Gov_effectiveness","Political_stability")
 #lag
 i_diff<- c(diff(scale(datafinal$r_deposit),30),rep(NA,30))
 CPI_diff<- c(diff(scale(datafinal$Inflation),2),rep(NA,2))
@@ -631,33 +636,59 @@ GDP_diff<- c(diff(scale(datafinal$GDP),50),rep(NA,5))
 
 
 #mod
-m3 <- lmer(data=datafinal,scale(Exports)~+scale(r_deposit)+scale(CPI)+scale(GDP)+scale(unemployment)+scale(Exchange)+scale(BusinessConfidenceSurvey)+scale(Inflationforecast)+CPI_diff+factor(Country)+(1+BusinessConfidenceSurvey|Country))
+m3 <- lmer(data=datafinal,scale(Exports)~+scale(r_deposit)+scale(CPI)+scale(GDP)+scale(unemployment)+scale(Exchange)+scale(BusinessConfidenceSurvey)+scale(Inflationforecast)+CPI_diff+factor(Country)+(1+Inflationforecast|Country))
 summary(m3)
 anova(m3)
-plot(m3,type=c("p","smooth"))##fitted vs  residual
+
+##fitted vs  residual
+
+plot(m3,type=c("p","smooth"))
 binnedplot(fitted(m3),resid(m3))
+
+
+lattice::dotplot(ranef(m3, condVar=TRUE))
+
 
 ```
 
 
 **We found that the fixed effects of CPI_diff is signifcant.** It means our worry is necessary. Some lag effects are influencing exports of countries.  
 
-The improvement also shows in the summary and residual&binned plots. For the section of summary, we can see that all fixed variables are significant, better than model2.  The ANOVA analysis also shows a better result.
+The improvement also shows in the summary and residual&binned plots. For the section of summary, we can see that all fixed variables are significant, better than model2.  The ANOVA analysis also shows a better result. All F-values are significant. Since Inflation forecast, Business Confidence Survey, Exchange rate are related with each other, we only use one when fitting a mixed model. 
 
-And as for binned plot, it's also slightly better than model2. We have reason to state that our model has been improved by consideringing lag effects.
-
-
+And as for binned plot, it's also slightly better than model2. We have reason to state that our model has been improved by consideringing lag effects. 
 
 
-#Discussion 
-##Implication 
-##Limitation
-##Future direction
 
+
+#V. Discussion 
+##5.1 Implication 
+1. The models indicate that import and export of different countries are all influenced by interest rate, CPI, GDP, Unemplyment, Business Confidence Survey, Inflation , which all have fixed effects, and also, different countries are influenced diferently by Inflation forecast, Business Confidence Survey, Exchange rate and so on. Since Inflation forecast, Business Confidence Survey, Exchange rate are related with each other, we only use one when fitting a mixed model. 
+
+2. Lag effects is common in economocs and exists in our model. It significantly influences the imports and exports of different countries.
+
+##5.2Limitation
+1. The dataset contains not ecough data, since macroeconomic data are always annual or seasonal. So when I am doing filtering and trying to have a cleaned dataset, it often turns out that data of a whole country has been filtered.
+
+2. I didn't explore deep enough into time series and constructed1 a AR or MA or ARMA model. I drew a ACF/PACF plot to show the type, but then it seems to be not meaningful to do time series analysis.
+
+3. I think my EDA is not of good use. I think many plots cannot tell a profound story. My intention is to use EDA to guide me to choose predictors of partial pooling. But I only adjust my model to choose the predictors. 
+
+
+##5.3 Future direction
+1. In the future, I will try to get more data for this exploration. Also, I want to take a look at the effect of time series to exports.  
+
+2. Also, several findings are not consistent with my assumption. For example, I thought the interest rate will influence different countries differently, but it's not good to use interest rate for partial pooling. Thus, I think it's also importance to find the theoratical basis, and explain the findings theoratically.
 
 
 #Reference 
-
-
-
-[].Juan C. Reboredo, Miguel A. Rivera-Castro, Wavelet-based evidence of the impact of oil prices on stock returns, International Review of Economics & Finance, Volume 29, 2014, Pages 145-176, ISSN 1059-0560, https://doi.org/10.1016/j.iref.2013.05.014.
+[1] https://www.investopedia.com/articles/trading/09/what-factors-create-trends.asp#ixzz5YeMXgWVM 
+[2] Lee, B. R., Lee, K., & Ratti, R. A. (2001). Monetary policy, oil price shocks, and the Japanese economy. Japan and the World Economy, 13, 321–349.
+[3] Pesaran, M. H., & Shin, Y. (1998). Generalized impulse response analysis in linear multivariate models. Economics Letters, 58, 17–29.
+[4] Eliezer B. Ayal (1965), The impact of export taxes on the domestic economy of underdeveloped countries, The Journal of Development Studies, 1:4, 330-362, DOI: 10.1080/00220386508421162
+[5] Export Prices Fall 0.5% Vs Expectations for 0.1% Gain; Import Prices Unchanged Vs Consensus For 0.2% Gain. (2013). Live Briefs US, p12.
+[6] Akram, Q. F. (2004). Oil prices and exchange rate. The Econometrics Journal, 7, 476–504.
+[7] Douglas Bates Martin Mächler Benjamin M. Bolker Steven C. Walker(2014) , Fitting linear mixed-effects models using lme4 , https://arxiv.org/pdf/1406.5823.pdf
+[8] Diagnostic Checks for Multilevel Models,Tom A. B. Snijders and Johannes Berkhof.(2013) https://www.stats.ox.ac.uk/~snijders/handbook_ml_ch3.pdf 
+[9] Chung-Rou Fang, Shih-Yi You(2014), The impact of oil price shocks on the large emerging countries' stock prices: Evidence from China, India and Russia, International Review of Economics & Finance, Volume 29, Pages 330-338, ISSN 1059-0560, https://doi.org/10.1016/j.iref.2013.06.005.
+[10] Juan C. Reboredo, Miguel A. Rivera-Castro(2014), Wavelet-based evidence of the impact of oil prices on stock returns, International Review of Economics & Finance, Volume 29, Pages 145-176, ISSN 1059-0560, https://doi.org/10.1016/j.iref.2013.05.014.
