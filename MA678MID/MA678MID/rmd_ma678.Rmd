@@ -2,7 +2,9 @@
 title: "MA678 Final Project"
 author: Yifu Dong
 date:   12/09/2018
-output: pdf_document
+output:
+  word_document: default
+  pdf_document: default
 fontsize: 12pt
 geometry: margin= 0.8in
 abstract: "This exploration analysis is based on the macroeconomic data from the world bank and tradingeconomics, aiming to explore the relationship between exports of different countries and many macroeconomic indicators. We use EDA to find appropriate indicators for partial pooling, and use linear model and mixed effect model to explore the quantitative relationship. By adding a lag effect indicator, we further improved the model. From this project, we know that the exports of different countries are all influenced by interest rate, exchange rate, CPI and so on. Also, different countries are being influenced differently by bussiness economic survey and inflation forecast."
