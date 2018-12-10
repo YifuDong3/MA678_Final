@@ -1,0 +1,663 @@
+---
+title: "MA678 Final Project"
+author: Yifu Dong
+date:   12/09/2018
+output: pdf_document
+---
+
+
+
+## draft
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.width = 8, fig.height = 8, fig.align  = "centre"  )
+library(arm)
+library(readxl)
+library(readr)
+library(tidyverse)
+library(data.table)
+library(gridExtra)
+library(knitr)
+library(pscl)
+library(rworldmap)
+library(corrplot)
+library(car)
+library(nlme)
+library(lme4)
+library(blme)
+library(dplyr)
+library(astsa)
+
+
+monthdata <- read_excel("ma678midppj.xlsx")
+yeardata <- read_excel("ma678midpj2.xlsx")
+
+monthdata_new <- read_excel("monthly.xlsx")
+yeardata_new <- read_excel("yearly.xlsx")
+
+```
+
+
+
+#Introduction
+
+##Background
+
+The world economy and global finance has strengthened over time. Not only the US, whose import and export over the past year had a better growth than in 2017, but also the whole world has benefit from Comparative Advantage. However, the improvements in 2018 in growth remain unevenly distributed across countries and regions. Economic prospects for many commodity exporters remain particularly challenging. Also, we has experienced a trend of Protectionism in global economy over the past years. To explore the grwoth of world economics, reasearching on protectionism is an important part. This requires us to learn about the import and export of each country. Trade between countries is the window to know protectionism and the world economy since it is equivalent to one of engines of economic growth. This is the view of Keynesian economics as well as modern liberal economists. The figure below shows how important trading between countries is. From 1960 to 2017, the percentage of trading between countries is increasing all the time.
+
+```{r fig.width=7, fig.height=25,echo=FALSE}
+library(png)
+library(grid)
+img <- readPNG("11.png") ###relative path
+ grid.raster(img)
+```
+Resource: The World Bank 
+
+From the image, we know that different countries are influenced by export and import differently. Also, differnt countries have different fiscal and currency policies. Thus, it's interesting to know how different these countries are influenced by different indicators.
+
+
+##Previous work
+
+Import and export has been explored deep in the field of macroeconomics and global finance. A lot of studies have examined the determinants of exports and imports. Riedel(1984) found that export and import behavior is heavily influenced by market conditions, which is used to measure domestic profitability and domestic demand. Matket conditions can be determinned by many factors. Cory Mitchell(2018) summarized that there are factors shaping trends over the long term and providing insight into how future trends may occur:government, liquidity, supply, demand, speculation and expectation and so on. (https://www.investopedia.com/articles/trading/09/what-factors-create-trends.asp#ixzz5YeMXgWVM ) 
+This actually is a rough summary. For example, We can further divide "government" into unemployment ratio, government policy, government credit, government corruption condition. Gaston(2010) found strong evidence that higher terms of trade lower the equilibrium rate of unemployment. Government policy definitly influence a lot on international transaction.It is related with taxation, import and export restraints, and exchange rate. Elizer Ayal(1965) (Eliezer B. Ayal (1965) The impact of export taxes on the domestic economy of underdeveloped countries, The Journal of Development Studies, 1:4, 330-362, DOI: 10.1080/00220386508421162) quantitatively researched on the impact of export taxaztion on economy of developing countries, like Thailand and Burma. Holly(1992) found that supply side factors are comparatively much more important than demand side factors for explaining export and import performance in the sector of German manufacturing. Jongwanish(2007) also did similar research in East and Southeast countries. Also, some indicators influencing a coutry's import and export are explored independently. Zhong, Xiaojun(2009) uses Co-integration analysis and Granger Causality test  to empirically analyze the FDI (Foreign Direct Investment) influence over Chinese import and export trade after reform and opening-up. But the influence of FDI on other countries still needs to be figured out. Also, in recent years, people pay more attention to the influence of expectation on import and export. Live Briefs US(2013) **(Export Prices Fall 0.5% Vs Expectations for 0.1% Gain; Import Prices Unchanged Vs Consensus For 0.2% Gain. (2013). Live Briefs US, p. 12.)** quantitatively concluded that 0.1% gain in expectation will contribute to 0.5% fall of export price. 
+
+Most of papers pay attention to import and export of one single country. Thus, it will be meaningful to compare indicators of export and import for different countries. 
+
+
+#Method 
+##Data source
+
+The data resource will be not only from the IMF website and Federal Reserve System, but also from third-party sites, like Tradingeconomics, theglobaleconomy.com, where we can download data more easily. Moreover, we need to visit websites of central banks in all other countries we want to explore.
+
+On the other hand, we choose several countries as our representative countries.
+
+##Model used
+
+
+
+
+
+#EDA
+
+First, we will do the EDA to see the relationships between our selected indicators and import and export. Consider that import and export and totally opposite, their corelation is -1. So we use export alone as our response. 
+
+##Data Cleaning
+
+Before EDA, we need to sort out our data and clean the data.  Also, we need to make sure all countries' export data are calculated to US dollar or another unified currency. 
+
+```{r}
+
+#merge monthdata and yeardata
+##transfer yeardata 
+
+yeardata_new1 <- yeardata_new%>%filter(Year!=1979)
+datasorted <- yeardata_new1[rep(seq_len(nrow(yeardata_new1)), each=1),]
+datasorted <- datasorted[rep(seq_len(nrow(datasorted)), each=12),]
+datasorted <- datasorted[-seq(2809,2832,1),] #remove data of 1980-1081India
+
+##month data
+monthdata_new <- monthdata_new%>%filter(Country!="Mauritius"&Country!="South Africa")
+
+#cbind year data&month data
+datafinal <- cbind(monthdata_new,datasorted[,-c(1,2,3)])
+
+
+#exchange rate adjsutment
+datafinal[datafinal$Country=="Japan",]$Exports=(datafinal[datafinal$Country=="Japan",]$Exports)/100  #HML TO ML
+datafinal[datafinal$Country=="India",]$Exports=(datafinal[datafinal$Country=="India",]$Exports)/100 #HML TO ML
+datafinal[datafinal$Country=="United Kingdom",]$Exports=(datafinal[datafinal$Country=="United Kingdom",]$Exports)*1.27 #pound to usd
+
+
+
+#change column names
+
+```
+
+##Data Visualization
+
+For this part, the main job is to find whether our indicators have obvious relationship with export. It is not recomended to use various kinds of plots, like pie chart and box plot, to show the trend because our variable characteristics are similar.
+
+###Country selection
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+
+theCountries <- c("DEU", "CAN", "CHN","FRA","BRA","GBR","IND","JPN","USA","AUS","ISR","SGP")
+# These are the ISO3 names of the countries you'd like to plot in red
+
+malDF <- data.frame(country = c("DEU", "CAN", "CHN","FRA","BRA","GBR","IND","JPN","USA","AUS","ISR","SGP"),
+  malaria = c("DEU", "CAN", "CHN","FRA","BRA","GBR","IND","JPN","USA","AUS","ISR","SGP"))
+# malDF is a data.frame with the ISO3 country names plus a variable to
+# merge to the map data
+
+malMap <- joinCountryData2Map(malDF, joinCode = "ISO3",
+  nameJoinColumn = "country")
+# This will join your malDF data.frame to the country map data
+
+mapCountryData(malMap, nameColumnToPlot="malaria", catMethod = "categorical",colourPalette="palette",
+  missingCountryCol = gray(.8))
+```
+
+We choose 12 countries as our selected countries. Our primary factor of choosing countries is the availability of their macroeconomic data. If data of a country are difficult to find or missing in the world bank database, we will not choose this country.
+
+Second, we try to make our selected coutries diverse. Thus, we not only choose USA, which is a large country, but also choose Singapore. 
+
+
+###Export Comparation
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=10,fig.height=10}
+library(ggsignif)
+
+ggplot(datafinal, aes(x = Year, y = Exports, fill = datafinal$Country)) +
+      geom_bar(stat = "identity") + scale_fill_brewer(palette="Set3")+    theme_minimal() + 
+    geom_signif(comparisons=list(c("2008", "2009")), annotations="***",
+              y_position = 9000000, tip_length = 2, vjust=4)+
+      ggtitle("Exports")
+
+export_removejpnind <- datafinal%>%filter(Country!="Japan"&Country!="India")
+
+```
+From the barplot above, we can visually see the export of each country. We found that from 1980-2017, the export of these countries is continuously increasing. We don't have data of November and December in 2018, so the amount of export in 2018 should be higher.  
+
+Moreover, we find from the barplot that from 2008 to 2009 the export of these countries drop down suddenly from about 8000000 to 65000000, we've found that it is dut to the financial crisis in 2008. It influenced USA and Japan most in terms of the amount of export. But in 2010, the export returned to the level of 2008, indicating that financial crisis didn't influence much to export of selected countries.
+
+
+###Finding predictors
+Now we are going to use visualization to find which variables are related to export, so as to prepare for the modelling.
+
+####GDP and Economic Growth
+Now we try to find whether Economics Growth is related with exports. According to Kayesian Formula, $$GDP = C+I+G+NX,$$
+where C represents consumption, I represents investment, G represent government budget, NX represents export minus import. Thus, we cannot use GDP growth to represent economic growth.
+
+We use Business confidence survey to represent economic growth. Business confidence survey offers valuable insight into trends of global business growth by surveying people across a broad spectrum of industries.
+```{r,fig.height=10,fig.width=10,message=FALSE,warning=FALSE,echo=FALSE}
+require(gridExtra)
+plot1 <- ggplot(datafinal, aes(x = datafinal$`Business confidence survey`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + ylim(0,500000)+
+      geom_smooth(se = FALSE)+
+      ggtitle("Government Effectiveness versus exports")
+
+
+grid.arrange(plot1,nrow=1)
+```
+From this plot, we find that export of each country is influenced differently by the Business confidence survey. For USA ,China and India, there is no trend to show the relationship of export and confidence survey. And for countries like Brazil, United Kindom, France, the smooth line is flat, which means the relationship is not clear. 
+And for Japan and Germany, there is a obvious positive relation between the two. 
+
+Thus, we can put this variable in our model and check whether it's a significant indicator.
+
+####Currency and inflation
+```{r,fig.height=15,fig.width=15,message=FALSE,warning=FALSE,echo=FALSE}
+#inflation
+require(gridExtra)
+plot1 <- ggplot(datafinal, aes(x = datafinal$`Inflation, monthly`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("Inflation rate versus exports") + theme_classic() +xlim(-1,4)
+plot2 <- ggplot(datafinal, aes(x = datafinal$`Inflation, monthly`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("Inflation rate versus exports") + theme_classic() +xlim(-1,4)+ylim(0,30000)
+
+
+#Deposit interest rate
+plot4 <- ggplot(datafinal, aes(x = datafinal$`Deposit interest rate`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("Deposit interest rate versus exports") + theme_classic() +xlim(-0.5,4)
+plot5 <- ggplot(datafinal, aes(x = datafinal$`Deposit interest rate`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("Deposit interest rate versus exports") + theme_classic() +xlim(2,4)+ylim(5000,100000)
+
+#Exchange rate to USD 
+plot6 <- ggplot(datafinal, aes(x = datafinal$`Exchange rate to USD`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("Exchange rate versus exports") + theme_classic()
+plot7 <- ggplot(datafinal, aes(x = datafinal$`Exchange rate to USD`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("Exchange rate versus exports") + theme_classic() +xlim(0,5)+ylim(0,100000)
+
+
+#CPI
+plot8 <- ggplot(datafinal, aes(x = `Consumer Price Index (CPI)`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity", position = position_dodge()) +   theme_minimal() + 
+      geom_smooth()+
+      ggtitle("CPI versus exports") + theme_classic() +ylim(0,100000)+xlim(0,250)
+
+grid.arrange(plot1, plot2,plot4,plot5,plot6,plot7,plot8, nrow=4)
+
+```
+
+Now it's the section of Currency and inflation.
+
+In this section, we have 4 indicators: Inflation Rate, Interest Rate, Exchange Rate and CPI. Each row represents plots for one indicator. 
+
+For the first row, the two plots are showing the relationship between Inflation Rate and export. We can find that for most countries selected, there are quadratic relationship here.The points are not showing lines but quadratic curves. 
+
+For the second row, the two plots are showing the relationship between Interest Rate and export. The lines are flat and not showing a strong negative trend. 
+Generally, the lower the interest rate is, the more goods and service a country will export: when interest rate is low, people inside the country will attempt to invest outside (where the interest rates are higher than domestic interest rates. Let’s assume the country as USD. To do this, they will require US dollars. This means that they will sell yen to buy USD. Japanese Yen will be more available to the foreign exchange market (forex) , the amount of USD in the forex market will decrease.As there are more Yen in forex, the value of yen in the forex market depreciates (Yen depreciates) . This allows net exports of japan to increase as japan is able to be more competitive due to the low exchange rate.
+
+For the thrid row,the two plots are showing the relationship between Exchange Rate and export. Generally, there is also a negative relation because lower interest rate will cause lower exchange rate. However, the negative curves also differ in selected countries.
+
+For the fourth row, the plot is showing the relationship between CPI and export. There is a clear positive trend here.
+
+####Labor Market 
+```{r,fig.height=7,fig.width=15,message=FALSE,warning=FALSE,echo=FALSE}
+plot1 <- ggplot(datafinal, aes(x = datafinal$`Unemployment rate`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity", position = position_dodge()) +   theme_minimal() + 
+      geom_smooth()+
+      ggtitle("Unemployment rate versus exports") + theme_classic() 
+
+
+plot2 <- ggplot(datafinal, aes(x = datafinal$`Unemployment rate`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity", position = position_dodge()) +   theme_minimal() + 
+      geom_smooth()+
+      ggtitle("Unemployment rate versus exports") + theme_classic() +ylim(0,200000)
+
+grid.arrange(plot1, plot2, nrow=1)
+```
+Now it's the section of unemployment. We are here drawing a plot of unemployment versus export. 
+
+We found that there is no clear unified trend. In most countries, like United Kindom, Australia, Canada, Germany, there are negative relation. However, the trend in Singapore, USA are not clear. Thus, we need to further explore this indicator.
+
+####Internation trade and investment 
+```{r,fig.height=15,fig.width=15,message=FALSE,warning=FALSE,echo=FALSE}
+#Foreign exchange reserves
+plot1 <- ggplot(datafinal, aes(x = datafinal$`Foreign exchange reserves`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity", position = position_dodge()) +   theme_minimal() + 
+      geom_smooth()+
+      ggtitle("Foreign exchange reserves versus exports") + theme_classic() 
+plot2 <- ggplot(datafinal, aes(x = datafinal$`Foreign exchange reserves`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity", position = position_dodge()) +   theme_minimal() + 
+      geom_smooth()+
+      ggtitle("Foreign exchange reserves versus exports") + theme_classic() +ylim(0,100000)+xlim(0,500)
+
+
+#FDI  (Foreign Directy Investment)
+plot3 <- ggplot(datafinal, aes(x = datafinal$FDI, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity", position = position_dodge()) +   theme_minimal() + 
+      geom_smooth(se=FALSE)+
+      ggtitle("FDI versus exports") + theme_classic() +xlim(-90000,90000)
+
+
+  plot4 <- ggplot(datafinal, aes(x = datafinal$FDI, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity", position = position_dodge()) +   theme_minimal() + 
+      geom_smooth(se=FALSE)+
+      ggtitle("FDI versus exports") + theme_classic() +ylim(0,100000)+xlim(-90000,90000)
+
+grid.arrange(plot1, plot2, plot3,plot4,nrow=2)
+
+
+
+```
+Now it's the section of Internation trade and investment .
+
+In this section, we have 2 indicators: Foreign exchange reserve and FDI(foreign directory investment).
+
+For the first row, the two plots are showing the relationship between Foreign exchange and export. We can find that for most countries selected, there are positive linear relationship here. So we can add it to our model and test it.
+
+For the second row, the two plots are showing the relationship between FDI and export. It seems that there is no relation here. All the lines seems like in a messy. 
+
+###Forecast and expectation
+```{r,fig.height=15,fig.width=15,message=FALSE,warning=FALSE, echo=FALSE}
+require(gridExtra)
+#Economics growth forecast
+plot1 <- ggplot(datafinal, aes(x = datafinal$`Economic growth forecast`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+ylim(0,500000)+
+      ggtitle("Economic growth expectation versus exports")
+plot2 <- ggplot(datafinal, aes(x = datafinal$`Economic growth forecast`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("UEconomic growth expectation versus exports") + theme_classic() +ylim(0,20000)
+
+#inflation forecast
+plot3 <- ggplot(datafinal, aes(x = datafinal$`Inflation forecast`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + xlim(-2,10)+ylim(0,300000)+
+      geom_smooth(se = FALSE)+
+      ggtitle("Inflation forecast versus exports")
+grid.arrange(plot1, plot2,plot3, nrow=2)
+```
+Now it's the section of Forecast and expectation.
+
+In this section, we have 2 indicators: Economic growth expectation and Inflation forecast.
+
+For the first row, the two plots are showing the relationship between Economic growth expectatio and export. Most of the lines here seems also like in a messy. All lines show no unified trend here. We will consider this as a noisy indicator.
+
+For the second row, the one plot is showing the relationship between Inflation forecast and export. It can be found that there is a mild but not clear negative trend here. It means for each country, the effect of decreasing might be different. For example, the effectness of Inflaction Forecast is more obvious in Japan than in Isareal or Canada.
+
+
+###Governance, institution and corruption
+
+```{r,,fig.height=8,fig.width=15,message=FALSE,warning=FALSE,echo=FALSE}
+require(gridExtra)
+#government effectiveness
+
+plot1 <- ggplot(datafinal, aes(x = datafinal$`Government effectiveness`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("Government Effectiveness versus exports") + theme_classic() +ylim(0,100000)
+
+#political stability 
+plot4 <- ggplot(datafinal, aes(x = datafinal$`Political stability`, y = Exports, color = datafinal$Country)) +
+      geom_point(stat = "identity") +   theme_minimal() + 
+      geom_smooth(se = FALSE)+
+      ggtitle("Political stability versus exports") + theme_classic() +ylim(0,100000)
+
+grid.arrange(plot1,plot4, nrow=1)
+```
+The last section is Governance, institution and corruption.
+
+In this section, we have 2 indicators: government effectiveness and political stability.
+
+We have two plots here. It's obvious that the effectness of these two indicators are similar, the trend of each color are pretty much the same. So if we want to add governance factor to our model, we cannot add these two together. 
+
+On the other hand, most of  the curves in the left-hand plot have similar quadratic trend. Thus, we need to try one of these two indicators in our model and see whether it can improve the model.
+
+
+##Correlation checking
+Now we already have several potential predictors: Business Confidence Survey, Inflation Rate, Interest Rate, Exchange Rate, CPI, Unemployment, Foreign exchange reserve, Inflation forecast, Tax, and Political Stability. 
+
+First, we will use these variables to draw a correlation plot. It's important because in financial market, there are a lot of indicators which are interrelated.
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=10,fig.height=10}
+colnames(datafinal) <- c("Country","Code","Year","Month","GDP","CPI","r_deposit","r_business","employment","unemployment","ecogrowth","Exports","FDI","ExchangeDeposit","Gov_expenditure","Prod","Inflation","Exchange","RetailSale","BusinessConfidenceSurvey","Reserves","Tax_internation","Tax_corporate","Imports","Tax_indirect","Remittances","Ecoforecast","Inflationforecast","Unemplymentforecast","Law","Gov_effectiveness","Political_stability")
+
+require('RColorBrewer')
+  t <- data.frame("Deposit interest rate"=datafinal$r_deposit, "CPI"=datafinal$CPI, "Unemplyment"=datafinal$unemployment, "Inflation"=datafinal$Inflation,"Exchange Rate"=datafinal$Exchange, "Business confidence survey"=datafinal$BusinessConfidenceSurvey,"Inflation forecast"=datafinal$Inflationforecast, "Foreign Exchange Reserve"=datafinal$ExchangeDeposit)
+t <- na.omit(t)
+M<-cor(t,use = "pair")
+
+#correlation plot
+col <- colorRampPalette(c('#2F2C62', '#42399B', '#4A52A7', '#59AFEA', '#7BCEB8', '#A7DA64',
+            '#EFF121', '#F5952D', '#E93131', '#D70131', '#D70131'))
+corrplot(M, method="color", col=col(200),  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance
+         sig.level = 0.01, insig = "blank", 
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE 
+         )
+
+library(usdm)
+tt <- vif(t)
+kable(tt)
+```
+
+In the heat plot, green color represents that the two indicators are not dependent. Blue and red color shows the dependence. 
+
+Also, we use VIF to show the collinearity. VIF can be used to detect collinearity (Strong correlation between two or more predictor variables). Collinearity causes instability in parameter estimation in regression-type models. The VIF is based on the square of the multiple correlation coefficient resulting from regressing a predictor variable against all other predictor variables. If a variable has a strong linear relationship with at least one other variables, the correlation coefficient would be close to 1, and VIF for that variable would be large. **A VIF greater than 10 is a signal that the model has a collinearity problem.** We can see from the table that our predictors need to be adjusted. The Foreign Exchange Reserve and Echange Rate are too large. 
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=10,fig.height=10}
+require('RColorBrewer')
+t <- data.frame("deposit interest rate"=datafinal$r_deposit, "CPI"=datafinal$CPI, "Unemplyment"=datafinal$unemployment, "Inflation"=datafinal$Inflation,"Exchange Rate"=datafinal$Exchange, "Business confidence survey"=datafinal$BusinessConfidenceSurvey,"Inflation forecast"=datafinal$Inflationforecast, "Political stability"=datafinal$Political_stability, "Economic growth"=datafinal$ecogrowth)
+t <- na.omit(t)
+M<-cor(t,use = "pair")
+
+#correlation plot
+col <- colorRampPalette(c('#2F2C62', '#42399B', '#4A52A7', '#59AFEA', '#7BCEB8', '#A7DA64',
+            '#EFF121', '#F5952D', '#E93131', '#D70131', '#D70131'))
+corrplot(M, method="color", col=col(200),  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance
+         sig.level = 0.01, insig = "blank", 
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE 
+         )
+
+library(usdm)
+tt <- vif(t)
+kable(tt)
+```
+
+Here we make some adjustment to our predictors. 
+
+After careful caomparison, we remove "Foreign Exchange Reserve", and try to add some another variables to our VIF checking. Finally ,we found another 3 predictors which don't have a large VIF value: Economics Growth, Government Stability and Rule of Law. This 3 variables also don't heve large collinearity with other existing variables. However, "The Rule of Law" doesn't have a good relationship with Exports, so we remove it.
+
+From the heat plot, we know that although the VIF value are small enough, there is still high correlation existing between indicators selected. To deal with it, we choose to keep them in our model, since VIF has indicated that the problem of collinearity will not influce our model. 
+
+
+##Lead-Lag effect checking(Time Series EDA)
+In statistics and economics, lead-lag effect is not rare. It describes the situation where one (leading) variable is cross-correlated with the values of another (lagging) variable at later times. In our project, we don't know whether our response(Export) will be influenced by lagging effect. So we need to use EDA to have a check. 
+
+Using VIF and correlation checking ,we already know 9 variables which are good for prediction. So here we use these 9 variables to check the lead-lag effect.
+
+Our first step is to group exports of all countries together by time. We use mean() instead of sum() to group all standardized exports because the volume of exports in different countries are different, so we have to keep the weight of each country equal. 
+
+Then we drew the ACF plots. If the time series is not trend-stationary, we would use diff() to get the first difference of the time series. The ACF plot give us suggestions on what degree of parameters to utilize. If the ACF had a smooth, geometric decay while the PACF had a sudden decay, we would utilize a pure AR(p) model. If the ACF/PACF shows no pattern of a smooth decay and decays to insignificance after lag p, we would build an MA(p) model to fit the data. 
+
+Here we constructed a function to get ACF plots.
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=7,fig.height=7}
+
+#indicator: r_deposit, CPI,unemployment,Inflation , Exchange, BusinessConfidenceSurvey, Inflationforecast, Political_stability, ecogrowth
+
+#Countruct a function to 
+############################################################################################# difference
+#Countruct a function to 
+myacf2diff <- function(a){
+   r_deposit_export <- data.frame("Country"=datafinal$Country,"r_deposit"=a,"export"=datafinal$Exports,"Year"=datafinal$Year,"Month"=datafinal$Month)
+  r_deposit_export <- na.omit(r_deposit_export)
+#sd and mean
+  sd_deposit <- aggregate(r_deposit_export$export, by=list(Country=r_deposit_export$Country), FUN=sd)
+  mean_deposit <- aggregate(r_deposit_export$export, by=list(Country=r_deposit_export$Country), FUN=mean)
+#mutate and standardization
+  r_deposit_export <- r_deposit_export%>%mutate("time"=100*r_deposit_export$Year+r_deposit_export$Month)
+  r_deposit_export <- r_deposit_export%>%left_join(sd_deposit,by="Country")
+  r_deposit_export <- r_deposit_export%>%left_join(mean_deposit,by="Country")
+  r_deposit_export <- r_deposit_export%>%mutate("standardized"=(export-x.y)/(2*x.x))
+#group by
+  planes <- group_by(r_deposit_export, time)
+  exportst <- summarise(planes,count = n(),mean_expo = mean(standardized),mean_deposit=mean(r_deposit))##exportst
+  exportst <- exportst%>%filter(count>4)
+#smoothing
+  autocor <- data.frame("time"=exportst$time,"mean"=exportst$mean_deposit)
+  cor(autocor)
+  
+  
+  
+#return 
+  return(acf(diff(autocor$mean),lag.max=50,plot=TRUE))
+}
+myacf2diff(datafinal$Exports)
+
+```
+
+Then we constructed a function to get PACF plots.
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.width=7,fig.height=7}
+mypacf2diff <- function(a){
+   r_deposit_export <- data.frame("Country"=datafinal$Country,"r_deposit"=a,"export"=datafinal$Exports,"Year"=datafinal$Year,"Month"=datafinal$Month)
+  r_deposit_export <- na.omit(r_deposit_export)
+#sd and mean
+  sd_deposit <- aggregate(r_deposit_export$export, by=list(Country=r_deposit_export$Country), FUN=sd)
+  mean_deposit <- aggregate(r_deposit_export$export, by=list(Country=r_deposit_export$Country), FUN=mean)
+#mutate and standardization
+  r_deposit_export <- r_deposit_export%>%mutate("time"=100*r_deposit_export$Year+r_deposit_export$Month)
+  r_deposit_export <- r_deposit_export%>%left_join(sd_deposit,by="Country")
+  r_deposit_export <- r_deposit_export%>%left_join(mean_deposit,by="Country")
+  r_deposit_export <- r_deposit_export%>%mutate("standardized"=(export-x.y)/(2*x.x))
+#group by
+  planes <- group_by(r_deposit_export, time)
+  exportst <- summarise(planes,count = n(),mean_expo = mean(standardized),mean_deposit=mean(r_deposit))##exportst
+  exportst <- exportst%>%filter(count>4)
+#smoothing
+  autocor <- data.frame("time"=exportst$time,"mean"=exportst$mean_deposit)
+  cor(autocor)
+  
+  
+  
+#return 
+   return(pacf(diff(autocor$mean),lag.max=50,plot=TRUE))
+
+}
+
+
+##
+mypacf2diff(datafinal$Exports)
+
+```
+
+Intially, we didn't use diff(), and tried to find whether the indicators are trend-stationary, then we found that most of indicators are not trend-stationary. So we use diff() here. From the ACF&PACF plots above, we have 9 ACF plots and 9 PACF plots, and each predictor has one ACF plot and one PACF plot. 
+
+For ACF plots, we found that the plot have smooth, geometric decay trend, and it's seasonal, while their PACF plots don't have. Thus, we can utilize a AR(p) model if we want to construct a time series model. 
+
+
+
+#Modelling 
+
+##Linear Regression Model
+Now, we begin to build a model.  First we use lm() to build a linear model.
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+#lm
+m1 <- lm(data=datafinal,scale(Exports)~scale(r_deposit)+scale(CPI)+scale(unemployment)+scale(Inflation)+scale(Exchange)+scale(BusinessConfidenceSurvey)+scale(Inflationforecast)+factor(Country)+scale(Political_stability)+scale(ecogrowth))
+summary(m1)
+outlierTest(m1)
+AIC(m1)
+par(mfrow=c(2,2))
+plot(m1)
+```
+
+First we construct a basic linear model. The R Squared of this model is 0.68. From the residual plot and normal Q-Q plot, we know that the residual is not random distributed. We need some adjustments. But it's still glad to see that some predictors are significant.
+
+
+##Multilevel Regression Model
+Now we build a Multilevel Regression Model. From our EDA, we know that we can use some predictors for partial pooling.
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+m2 <- lmer(data=datafinal,scale(Exports)~scale(r_deposit)+scale(CPI)+scale(unemployment)+scale(Inflation)+scale(Exchange)+scale(BusinessConfidenceSurvey)+scale(Inflationforecast)+scale(GDP)+factor(Country)+(1+Exchange|Country))
+summary(m2)
+datafinal <- datafinal%>%mutate("time"=100*datafinal$Year+datafinal$Month)
+
+
+#model checking
+#https://www.stats.ox.ac.uk/~snijders/handbook_ml_ch3.pdf 
+#Diagnostic Checks for Multilevel Models,Tom A. B. Snijders and Johannes Berkhof
+
+#Fitting linear mixed-effects models using lme4 ,Douglas Bates Martin Mächler Benjamin M. Bolker Steven C. Walker, 2014, https://arxiv.org/pdf/1406.5823.pdf
+
+
+#model checking 
+anova(m2)
+plot(m2,type=c("p","smooth") )##fitted vs  residual
+plot(m2,sqrt(abs(resid(.)))~fitted(.),type=c("p","smooth")) ## scale-location
+binnedplot(fitted(m2),resid(m2))
+```
+
+We use several predictors which we used in the section of EDA for partial pooling. After many trials, it turns out that BusinessConfidenceSurvey, ecogrowth and FDI will help the model fit better.
+From the display and ANOVA analysis of this model. We can see that almost all predictors are significant. The random effects and fixed effects are not influenced much by correlation. 
+The analysis of variance table  is a collection of statistical models and their associated estimation procedures used to analyze the differences among group means in a sample.The F-statistic is a ratio of two quantities that are expected to be roughly equal under the null hypothesis, which produces an F-statistic of approximately 1. In our model, F-test is to used for testing whether the coefficient of thevariable equals 0. The result of our ANOVA shows that most of our predictors are significant. 
+Then from the residual plot and binned residual plot, we find that actually the model fits not bad. All the residual points are random distributed and no outliers exists in our residual plot. As for the binned plot, most bins are in the interval, and no linear separation exists.
+
+Notice that our AIC and DIC here are negative. 
+The AIC is defined as: $$AIC=2k-2ln(L)$$where k denotes the number of parameters and L denotes the maximized value of the likelihood function. For model comparison, the model with the lowest AIC score is preferred. So does DIC.
+
+Limitation:
+There is still something need to be improved. Here we find that F-value of Inflation is not significant,  for deposit interest rate, its fixed effect is also not significant. However, if we remove it, the goodness of fit will be worse. 
+
+
+
+##lmer()&time
+The multilevel model fits not bad. But it's kind of weird: Generally, lag effect is common in economics. 
+For example, inflation in December would not influence the export in December, because when the export happens in this month, maybe the order and contract has already been determined several months ago. So if money inlfation happens in this month, it will influence those orders and contract which have not been determined yet, and it will cause the traders to re-think whether the order is still profitable, and whether something, like the quantity of goods, needs to be adjusted to hedge the influence of inflation before making a deal.
+
+In statistics and econometrics, a distributed lag model is a model for time series data in which a regression equation is used to predict current values of a dependent variable based on both the current values of an explanatory variable and the lagged (past period) values of this explanatory variable.
+
+Here, we dicide to do something to show the lag effect and thus make the model better, at least theoratically better. Otherwise it's pretty weird that exports are influenced.
+
+We choose to use diff(p) to calculate the lag effect, where p denotes how many months are lagged. In fact, the algorithm of diff(p) in a vector is: vector(n)-vector(n-p), then we will get a vector with length of (n-p). So does it work with a dataframe. We think it make sense because this function will give us a vector, where every element in this vector represents the difference between p months. If the influence is truly lagged, then the difference will show it.
+
+First, we can draw a plot to show correlation with exports when the indicator is lagged. What should be know is that we cannot lag too much months because of our dataset structure. We pile the data of all countries into a stack, so we cannot lag too much months, otherwise it has no meaning.
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.height=6,fig.width=6}
+
+#lag
+inflation_diff<- c(diff(scale(datafinal$Inflation),3),rep(NA,3))
+
+
+my_diffcor <- function(variable,p,maintitle){
+     #0 month
+    t_diff<- c(rep(NA,0),(scale(variable)))
+    unemployment_diff_cor <- data.frame("unemployment_diff"=t_diff,"exports"=datafinal$Exports)
+    unemployment_diff_cor <- na.omit(unemployment_diff_cor)
+    correlationdiff <- cor(unemployment_diff_cor)[1,2]
+    
+    diff_cor <- c(correlationdiff)## a vector for plotting
+
+  
+   for(i in 1:p){ 
+    #lag one month to 60 months
+      t_diff<- c(diff(scale(variable),i),rep(NA,i))
+    unemployment_diff_cor <- data.frame("unemployment_diff"=t_diff,"exports"=datafinal$Exports)
+    unemployment_diff_cor <- na.omit(unemployment_diff_cor)
+    correlationdiff <- cor(unemployment_diff_cor)[1,2]
+    diff_cor <- union(diff_cor,correlationdiff)
+  }
+  return(barplot(diff_cor,main=maintitle,xlab="lag month", ylab="correlation",col="orange"))
+}
+
+par(mfrow=c(3,3))
+my_diffcor(datafinal$r_deposit,50,"r_deposit")
+my_diffcor(datafinal$CPI,20,"CPI")
+my_diffcor(datafinal$Inflationforecast,40,"Inflationforecast")
+my_diffcor(datafinal$Unemplymentforecast,12,"Unemplymentforecast")
+my_diffcor(datafinal$Tax_indirect,12,"Tax_indirect")
+my_diffcor(datafinal$unemployment,20,"unemployment")
+my_diffcor(datafinal$Exchange,40,"Exchange")
+my_diffcor(datafinal$BusinessConfidenceSurvey,40,"BusinessConfidenceSurvey")
+my_diffcor(datafinal$Inflation,40,"Inflation")
+
+```
+
+From the plot above, we do find that there are some variables can influence. Like interest rate, CPI, exchange, and economic grwoth forecast. However, we still need to look at the y-value.Take "inflationforecast" for example, even though the correlation increase, but the peak correlation is just 0.05, then we cannot consider it as a good indicator.
+
+Thus, we choose CPI here as our lagged indicator.
+
+We can try to utilize this to adjust our model:
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE,fig.height=5,fig.width=5}
+
+#lag
+i_diff<- c(diff(scale(datafinal$r_deposit),30),rep(NA,30))
+CPI_diff<- c(diff(scale(datafinal$Inflation),2),rep(NA,2))
+exchange_diff<- c(diff(scale(datafinal$Inflation),30),rep(NA,30))
+ecoforecast_diff <- c(diff(scale(datafinal$Inflation),50),rep(NA,50))
+inflation_diff<- c(diff(scale(datafinal$Inflation),3),rep(NA,3))
+GDP_diff<- c(diff(scale(datafinal$GDP),50),rep(NA,5))
+
+
+#mod
+m3 <- lmer(data=datafinal,scale(Exports)~+scale(r_deposit)+scale(CPI)+scale(GDP)+scale(unemployment)+scale(Exchange)+scale(BusinessConfidenceSurvey)+scale(Inflationforecast)+CPI_diff+factor(Country)+(1+BusinessConfidenceSurvey|Country))
+summary(m3)
+anova(m3)
+plot(m3,type=c("p","smooth"))##fitted vs  residual
+binnedplot(fitted(m3),resid(m3))
+
+```
+
+
+**We found that the fixed effects of CPI_diff is signifcant.** It means our worry is necessary. Some lag effects are influencing exports of countries.  
+
+The improvement also shows in the summary and residual&binned plots. For the section of summary, we can see that all fixed variables are significant, better than model2.  The ANOVA analysis also shows a better result.
+
+And as for binned plot, it's also slightly better than model2. We have reason to state that our model has been improved by consideringing lag effects.
+
+
+
+
+#Discussion 
+##Implication 
+##Limitation
+##Future direction
+
+
+
+#Reference 
+
+
+
+[].Juan C. Reboredo, Miguel A. Rivera-Castro, Wavelet-based evidence of the impact of oil prices on stock returns, International Review of Economics & Finance, Volume 29, 2014, Pages 145-176, ISSN 1059-0560, https://doi.org/10.1016/j.iref.2013.05.014.
